@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
-import { emit } from 'cluster';
+import { Usuario } from '../models/usuario.model';
 
 @Injectable({
   providedIn: 'root'
@@ -8,8 +8,10 @@ import { emit } from 'cluster';
 export class WebsocketService {
 
   public socketStatus = false;
+  public usuario: Usuario;
 
   constructor( private socket: Socket ) {
+    this.cargarStorage();
     this.checkStatus();
   }
 
@@ -34,5 +36,39 @@ export class WebsocketService {
 
   listen( evento: string ) {
     return this.socket.fromEvent( evento );
+  }
+
+  loginWS( nombre: string ) {
+
+    return new Promise( (resolve, reject ) => {
+      this.emit('configurar-usuario', { nombre }, resp => {
+        console.log( resp );
+        this.usuario = new Usuario( nombre);
+        this.guardarStorage();
+        resolve();
+      });
+    });
+
+    // console.log('Configurando ', nombre);
+
+    // this.socket.emit( 'configurar-usuario', { nombre }, ( resp ) => {
+    //   console.log(resp);
+    // });
+  }
+
+  getUsuario() {
+    return this.usuario;
+  }
+  guardarStorage() {
+      localStorage.setItem('usuario', JSON.stringify( this.usuario ));
+  }
+
+
+  cargarStorage() {
+
+    if ( localStorage.getItem('usuario') ) {
+      this.usuario = JSON.parse(localStorage.getItem('usuario'));
+      this.loginWS( this.usuario.nombre );
+    }
   }
 }
